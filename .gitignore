@@ -1,0 +1,7 @@
+*result*
+*.pdf
+config.nix
+config.json
+emblem.*
+/emblems
+entries.json

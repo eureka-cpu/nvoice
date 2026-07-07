@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Harvest exporter output",
+  "description": "Array of time entries as produced by harvest-exporter --format json. One invoice is generated per unique client value.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "agency",
+      "client",
+      "start_date",
+      "end_date",
+      "exchange_rate",
+      "rounded_hours",
+      "source_currency",
+      "source_hourly_rate",
+      "target_currency",
+      "target_hourly_rate",
+      "task",
+      "user"
+    ],
+    "properties": {
+      "agency":             { "type": "string", "description": "The agency the user works under. Must match a key in config.nix agencies for emblem/payment_terms lookup." },
+      "client":             { "type": "string", "description": "Client name. Entries are grouped by this field — one invoice per unique client." },
+      "start_date":         { "type": "string", "pattern": "^[0-9]{8}$", "description": "Period start date in YYYYMMDD format." },
+      "end_date":           { "type": "string", "pattern": "^[0-9]{8}$", "description": "Period end date in YYYYMMDD format. Used to derive the invoice number." },
+      "exchange_rate":      { "type": "number", "description": "Exchange rate from source to target currency. Use 1.0 when no conversion is needed." },
+      "rounded_hours":      { "type": "number", "exclusiveMinimum": 0, "description": "Billable hours for this entry." },
+      "source_cost":        { "type": "number", "description": "Total cost in source currency." },
+      "source_currency":    { "type": "string", "description": "Currency symbol for billing (e.g. \"$\", \"€\")." },
+      "source_hourly_rate": { "type": "number", "exclusiveMinimum": 0, "description": "Hourly rate in source currency." },
+      "target_cost":        { "type": "number", "description": "Total cost in target currency after exchange." },
+      "target_currency":    { "type": "string", "description": "Currency symbol for payment. Shown as SUB TOTAL column when different from source_currency." },
+      "target_hourly_rate": { "type": "number", "exclusiveMinimum": 0, "description": "Hourly rate in target currency." },
+      "task":               { "type": "string", "description": "Task description. Combined with the month to form the invoice line item." },
+      "user":               { "type": "string", "description": "Name of the person who performed the work." }
+    }
+  }
+}
