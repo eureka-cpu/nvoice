@@ -29,7 +29,7 @@ the full field reference.
 
 If you don't use Harvest or a similar service, you can log hours daily with the
 included `log-hours` script. It appends one entry per day to a per-month JSON
-file (e.g. `july.json`) and derives the filename automatically from the date.
+file (e.g. `july-2026.json`) and derives the filename automatically from the date.
 
 Run it directly with the flake — `jq` and `coreutils` are bundled automatically.
 DATE defaults to today if omitted:
@@ -65,7 +65,7 @@ nix run .#log-hours -- 20260714 -hours 8 -rate 150 -currency USDC
 At the end of the month, pass the file to generate the invoice:
 
 ```sh
-nix-build --arg entries ./july.json --argstr invoiceNumber 2026-07 --combine
+nix-build --arg entries ./july-2026.json --argstr invoiceNumber 2026-07 --combine
 ```
 
 Each day becomes its own line item. The `--combine` flag merges all entries for

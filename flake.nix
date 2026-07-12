@@ -106,7 +106,7 @@
 
               if [[ -z "$FILE" ]]; then
                 MONTH_NAME=$(date -d "''${DATE:0:4}-''${DATE:4:2}-01" +%B | tr '[:upper:]' '[:lower:]')
-                FILE="''${MONTH_NAME}.json"
+                FILE="''${MONTH_NAME}-''${DATE:0:4}.json"
               fi
 
               TARGET_CURRENCY="''${TARGET_CURRENCY:-$CURRENCY}"
