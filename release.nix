@@ -108,7 +108,7 @@ let
         inherit entries org filename;
         emblemSrc = if resolvedEmblem != null then "${resolvedEmblem}" else "";
         dateArg = if date != null then date else "";
-        invoiceNumberArg = if invoiceNumber != null then invoiceNumber else "";
+        invoiceNumberArg = if invoiceNumber != null then toString invoiceNumber else "";
 
         buildInputs = fontPkgs;
         nativeBuildInputs = [ typst ];

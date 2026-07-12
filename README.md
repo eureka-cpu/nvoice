@@ -58,7 +58,14 @@ nix eval --raw -f release.nix configJson | jq '.'
 | `--arg combine true` | `false` | `true` = one invoice per client; `false` = one invoice per entry |
 | `--argstr org "Name"` | `""` | Override the provider name on a single invoice |
 | `--argstr date "2026-01-31"` | current date | Invoice date (single invoice mode only) |
-| `--argstr invoiceNumber INV-01` | from entries | Override invoice number (single invoice mode only) |
+| `--argstr invoiceNumber INV-01` | from entries | Override the invoice number |
+
+> [!WARNING]
+> Use `--argstr` (not `--arg`) for all string values such as `invoiceNumber`,
+> `org`, and `date`. `--arg` evaluates its value as a Nix expression, so
+> `--arg invoiceNumber 2026-06` computes `2026 − 6 = 2020` instead of passing
+> the string `"2026-06"`. `entries` and `combine` are the only flags that
+> legitimately use `--arg`.
 
 ## Config (`config.nix`)
 

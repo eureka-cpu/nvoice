@@ -81,9 +81,10 @@ let
               first = builtins.head clientEntries;
               invoiceData = makeInvoiceData idx clientName clientEntries;
               datePart = "${builtins.substring 0 4 first.end_date}-${builtins.substring 4 2 first.end_date}";
-              filename = "${clientSafeStr clientName}_${invoiceData.number}_${datePart}";
+              effectiveNumber = if invoiceNumber != null then toString invoiceNumber else invoiceData.number;
+              filename = "${clientSafeStr clientName}_${effectiveNumber}_${datePart}";
               drv = buildInvoice {
-                inherit filename;
+                inherit filename invoiceNumber;
                 emblem = (agencies.${first.agency} or { }).emblem or null;
                 entries = builtins.toJSON invoiceData;
               };
@@ -103,9 +104,10 @@ let
             let
               invoiceData = makeInvoiceData idx e.client [ e ];
               datePart = "${builtins.substring 0 4 e.end_date}-${builtins.substring 4 2 e.end_date}";
-              filename = "${clientSafeStr e.client}_${invoiceData.number}_${datePart}";
+              effectiveNumber = if invoiceNumber != null then toString invoiceNumber else invoiceData.number;
+              filename = "${clientSafeStr e.client}_${effectiveNumber}_${datePart}";
               drv = buildInvoice {
-                inherit filename;
+                inherit filename invoiceNumber;
                 emblem = (agencies.${e.agency} or { }).emblem or null;
                 entries = builtins.toJSON invoiceData;
               };
