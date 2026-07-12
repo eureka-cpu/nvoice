@@ -5,3 +5,6 @@ config.json
 emblem.*
 /emblems
 entries.json
+[a-z]*.json
+!entries-example.json
+!entries.schema.json
