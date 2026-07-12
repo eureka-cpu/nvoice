@@ -37,7 +37,7 @@
 
   agencies = {
     "Acme Corp" = {
-      emblem        = ./emblem-example.svg;
+      emblem = ./emblem-example.svg;
       payment_terms = "Net 30";
     };
     "Example Agency LLC" = {

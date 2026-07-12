@@ -8,3 +8,4 @@ entries.json
 [a-z]*.json
 !entries-example.json
 !entries.schema.json
+tui/vendor/

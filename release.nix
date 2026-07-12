@@ -1,3 +1,4 @@
+{ configFile ? null }:
 let
   pkgs = import <nixpkgs> { };
   inherit (pkgs)
@@ -11,7 +12,10 @@ let
   inherit (nvoiceLib) schema;
 
   # Private: loaded without validation, used only for devshell / clients / agencies
-  _defaultConfigFile = if builtins.pathExists ./config.nix then ./config.nix else ./config-example.nix;
+  _defaultConfigFile =
+    if configFile != null then configFile
+    else if builtins.pathExists ./config.nix then ./config.nix
+    else ./config-example.nix;
   _rawConfig = import _defaultConfigFile { inherit pkgs; };
 
   _userFontPackages = lib.mapAttrsToList (_: f: f.package) ((_rawConfig.theme or { }).fonts or { });
@@ -54,9 +58,9 @@ let
           yearResult = lib.foldl'
             (
               acc: y:
-              if acc.done || acc.remaining < (daysInYear y)
-              then acc // { done = true; year = y; }
-              else acc // { remaining = acc.remaining - (daysInYear y); }
+                if acc.done || acc.remaining < (daysInYear y)
+                then acc // { done = true; year = y; }
+                else acc // { remaining = acc.remaining - (daysInYear y); }
             )
             { remaining = totalDays; done = false; year = 1970; }
             (lib.range 1970 2200);
@@ -113,49 +117,49 @@ let
         buildInputs = fontPkgs;
         nativeBuildInputs = [ typst ];
 
-      doCheck = true;
-      nativeCheckInputs = [ typstyle ];
-      checkPhase = ''
-        typstyle --check src/invoice.typ
-      '';
+        doCheck = true;
+        nativeCheckInputs = [ typstyle ];
+        checkPhase = ''
+          typstyle --check src/invoice.typ
+        '';
 
-      buildPhase = ''
-        if [ -z "$entries" ]; then
-          echo "error: no invoice entries provided" >&2
-          echo "  pass --arg entries ./entries.json" >&2
-          exit 1
-        fi
+        buildPhase = ''
+          if [ -z "$entries" ]; then
+            echo "error: no invoice entries provided" >&2
+            echo "  pass --arg entries ./entries.json" >&2
+            exit 1
+          fi
 
-        if [ -n "$dateArg" ]; then
-          export SOURCE_DATE_EPOCH=$(date -d "$dateArg" +%s)
-        fi
+          if [ -n "$dateArg" ]; then
+            export SOURCE_DATE_EPOCH=$(date -d "$dateArg" +%s)
+          fi
 
-        printf '%s' "$configJson" > config.json
-        printf '%s' "$entries" > entries.json
+          printf '%s' "$configJson" > config.json
+          printf '%s' "$entries" > entries.json
 
-        if [ -n "$emblemSrc" ]; then
-          cp "$emblemSrc" emblem.svg
-        fi
+          if [ -n "$emblemSrc" ]; then
+            cp "$emblemSrc" emblem.svg
+          fi
 
-        extra=""
-        if [ -n "$invoiceNumberArg" ]; then
-          extra="--input invoice-number=$invoiceNumberArg"
-        fi
+          extra=""
+          if [ -n "$invoiceNumberArg" ]; then
+            extra="--input invoice-number=$invoiceNumberArg"
+          fi
 
-        typst compile src/invoice.typ "$filename.pdf" \
-          --root . \
-          --input org="$org" \
-          ${lib.optionalString hasEmblem "--input has-emblem=true"} \
-          $extra
-      '';
+          typst compile src/invoice.typ "$filename.pdf" \
+            --root . \
+            --input org="$org" \
+            ${lib.optionalString hasEmblem "--input has-emblem=true"} \
+            $extra
+        '';
 
-      installPhase = ''
-        mkdir -p $out
-        cp "$filename.pdf" $out/
-        cp src/invoice.typ "$out/$filename.typ"
-      '';
-    }
-    // lib.optionalAttrs (fontPkgs != [ ]) { inherit TYPST_FONT_PATHS; }
+        installPhase = ''
+          mkdir -p $out
+          cp "$filename.pdf" $out/
+          cp src/invoice.typ "$out/$filename.typ"
+        '';
+      }
+      // lib.optionalAttrs (fontPkgs != [ ]) { inherit TYPST_FONT_PATHS; }
     );
 
   # Dynamic config reference derived entirely from the schema declarations in lib.nix.
@@ -198,7 +202,10 @@ let
       buildInputs = _fontPkgs;
       packages = with pkgs; [
         typst
+        typstyle
         nil
+        nixpkgs-fmt
+        go
       ];
     }
     // lib.optionalAttrs (_fontPkgs != [ ]) { TYPST_FONT_PATHS = _TYPST_FONT_PATHS; }

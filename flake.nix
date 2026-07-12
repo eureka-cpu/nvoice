@@ -13,7 +13,7 @@
         "aarch64-darwin"
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
-      release = import ./release.nix;
+      release = import ./release.nix { };
     in
     {
       # Use as a lib in another flake:
@@ -249,6 +249,7 @@
               [[ -n "$org" ]] && args+=(--argstr org "$org")
               [[ -n "$date" ]] && args+=(--argstr date "$date")
               [[ -n "$invoice_number" ]] && args+=(--argstr invoiceNumber "$invoice_number")
+              [[ -n "''${NVOICE_CONFIG:-}" ]] && args+=(--argstr configFile "$NVOICE_CONFIG")
 
               result=$(nix-build ${self}/default.nix \
                 --argstr entries "$(cat "$entries")" \
@@ -262,6 +263,24 @@
               fi
             '';
           };
+
+          nvoiceTuiBin = pkgs.buildGoModule {
+            pname = "nvoice-tui";
+            version = "0.1.0";
+            src = ./tui;
+            vendorHash = "sha256-P3iFBhlDRS+bTfGRwy2bTPmi83HgIOMPKI364SRUouI=";
+            postInstall = "mv $out/bin/tui $out/bin/nvoice-tui";
+          };
+
+          nvoiceTui = pkgs.symlinkJoin {
+            name = "nvoice-tui";
+            paths = [ nvoiceTuiBin ];
+            nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+            postBuild = ''
+              wrapProgram $out/bin/nvoice-tui \
+                --set NVOICE "${nvoice}/bin/nvoice"
+            '';
+          };
         in
         {
           default = {
@@ -271,6 +290,10 @@
           log-hours = {
             type = "app";
             program = "${logHours}/bin/log-hours";
+          };
+          nvoice-tui = {
+            type = "app";
+            program = pkgs.lib.getExe' nvoiceTui "nvoice-tui";
           };
         }
       );

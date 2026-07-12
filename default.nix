@@ -15,9 +15,12 @@
   # combine = true  → one invoice per client (all their entries as line items)
   # combine = false → one invoice per entry
 , combine ? false
+  # path string to a config.nix; if omitted, looks for ./config.nix then ./config-example.nix
+, configFile ? null
 }:
 let
-  inherit (import ./release.nix) pkgs lib clients agencies weekOfYear buildInvoice;
+  _configFile = if configFile != null then /. + configFile else null;
+  inherit (import ./release.nix { configFile = _configFile; }) pkgs lib clients agencies weekOfYear buildInvoice;
 
   entriesStr = if builtins.typeOf entries == "path" then builtins.readFile entries else entries;
   parsed = builtins.fromJSON entriesStr;

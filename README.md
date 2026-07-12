@@ -6,6 +6,19 @@ PDF per client automatically.
 
 ## Quick Start
 
+### Nvoice TUI
+
+The fastest way to get used to the workflow is to run the tui, which adds a layer of convenience
+for managing entires. The tui is just a simple Go wrapper around the existing Nix and shell
+application interfaces.
+
+```sh
+# Open the tui in the current directory
+nix run .#nvoice-tui -- .
+```
+
+### Nvoice CLI
+
 ```sh
 # With flakes
 nix run . -- entries.json
