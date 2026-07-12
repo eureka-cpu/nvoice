@@ -84,7 +84,8 @@
     if i > 0 and calc.rem(len - i, 3) == 0 { formatted += "," }
     formatted += s.at(i)
   }
-  sym + formatted + "." + cents-str
+  let amount = formatted + "." + cents-str
+  if sym.len() > 1 { amount + " " + sym } else { sym + amount }
 }
 
 #let money(n) = fmt-money(n, currency)
@@ -150,13 +151,17 @@
 #let n = rows.len()
 #let col-hdr(body) = text(size: 8pt, weight: "bold", fill: clr-label)[#body]
 #table(
-  columns: if has-fx { (1fr, auto, auto, auto, auto) } else {
+  columns: if has-fx { (1fr, auto, auto, auto, auto) } else if is-weekly {
     (1fr, auto, auto, auto)
+  } else {
+    (1fr, auto, auto, auto, auto)
   },
   align: if has-fx {
     (left, center, right, right, right)
-  } else {
+  } else if is-weekly {
     (left, center, right, right)
+  } else {
+    (left, center, right, right, right)
   },
   stroke: (x, _) => if x > 0 { (left: 0.5pt + clr-rule) } else { none },
   inset: (x: 0.6em, y: 0.55em),
@@ -169,6 +174,11 @@
   table.header(
     col-hdr[DESCRIPTION],
     col-hdr(if is-weekly { "WEEK" } else { "HOURS" }),
+    ..if not is-weekly and not has-fx {
+      (col-hdr("RATE (" + currency + "/hr)"),)
+    } else {
+      ()
+    },
     col-hdr("PRICE" + (if has-fx { " (" + currency + ")" } else { "" })),
     ..if has-fx {
       (col-hdr("RATE (" + currency + " ⟶ " + currency-to + ")"),)
@@ -187,9 +197,15 @@
       } else {
         [#r.entry.hours]
       }
+      let rate-cell = if not is-weekly and not has-fx {
+        ([#money(r.entry.rate)],)
+      } else {
+        ()
+      }
       let base = (
         [#r.entry.description],
         qty,
+        ..rate-cell,
         [#money(r.line-total)],
       )
       let fx = if has-fx {
@@ -206,7 +222,7 @@
 
   table.hline(stroke: 0.5pt + clr-rule),
 
-  table.cell(colspan: if has-fx { 4 } else { 3 })[#text(
+  table.cell(colspan: if has-fx { 4 } else if is-weekly { 3 } else { 4 })[#text(
     weight: "bold",
   )[GRAND TOTAL]],
   [#text(weight: "bold")[#if has-fx {
