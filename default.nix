@@ -71,6 +71,26 @@ let
 
   harvestEntries = if builtins.isList parsed then parsed else [ parsed ];
 
+  # Group entries by task (and rate), summing hours and cost within each group.
+  combineByTask =
+    es:
+    let
+      key = e: "${e.task}-${toString (e.source_hourly_rate or 0)}";
+      grouped = lib.groupBy key es;
+    in
+    map
+      (
+        k:
+        let
+          group = grouped.${k};
+          first = builtins.head group;
+          totalHours = lib.foldl' (acc: e: acc + e.rounded_hours) 0 group;
+          totalCost = lib.foldl' (acc: e: acc + (e.source_cost or 0)) 0 group;
+        in
+        first // { rounded_hours = totalHours; source_cost = totalCost; }
+      )
+      (builtins.attrNames grouped);
+
   # One invoice per client, all their entries as line items
   batchBuild =
     let
@@ -80,7 +100,7 @@ let
         (
           idx: clientName:
             let
-              clientEntries = byClient.${clientName};
+              clientEntries = combineByTask byClient.${clientName};
               first = builtins.head clientEntries;
               invoiceData = makeInvoiceData idx clientName clientEntries;
               datePart = "${builtins.substring 0 4 first.end_date}-${builtins.substring 4 2 first.end_date}";
