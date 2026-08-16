@@ -13,15 +13,15 @@ import (
 	"github.com/eureka-cpu/nvoice/tui/styles"
 )
 
-var validMonthRe = regexp.MustCompile(`^[a-z]+-\d{4}$`)
+var validFileNameRe = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
 
 func updateMonths(m Model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.creatingMonth {
 		switch msg.Type {
 		case tea.KeyEnter:
 			name := strings.TrimSpace(m.newMonthInput.Value())
-			if !validMonthRe.MatchString(name) {
-				m.statusMsg = "Name must be like july-2026"
+			if !validFileNameRe.MatchString(name) {
+				m.statusMsg = "Name must contain only letters, numbers, hyphens, or underscores"
 				m.statusErr = true
 				return m, nil
 			}
@@ -44,6 +44,7 @@ func updateMonths(m Model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyEsc:
 			m.creatingMonth = false
+			m.newMonthInput.Blur()
 			m.statusMsg = ""
 			return m, nil
 
@@ -72,6 +73,7 @@ func updateMonths(m Model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "n":
 		m.creatingMonth = true
 		m.newMonthInput.SetValue("")
+		m.newMonthInput.Focus()
 		m.statusMsg = ""
 		return m, textinput.Blink
 	}

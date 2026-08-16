@@ -37,44 +37,15 @@ let
   clients = _rawConfig.clients or { };
   agencies = _rawConfig.agencies or { };
 
-  weekOfYear =
-    dateStr:
-    let
-      fromDateStr =
-        ds:
-        let
-          month = lib.toInt (lib.removePrefix "0" (builtins.substring 4 2 ds));
-          day = lib.toInt (lib.removePrefix "0" (builtins.substring 6 2 ds));
-          acc = [ 0 31 59 90 120 151 181 212 243 273 304 334 ];
-          dayOfYear = builtins.elemAt acc (month - 1) + day;
-          week = builtins.div (dayOfYear - 1) 7 + 1;
-        in
-        if week > 52 then 52 else week;
-      fromCurrentTime =
-        let
-          totalDays = builtins.div builtins.currentTime 86400;
-          isLeap = y: (lib.mod y 4 == 0 && lib.mod y 100 != 0) || lib.mod y 400 == 0;
-          daysInYear = y: if isLeap y then 366 else 365;
-          yearResult = lib.foldl'
-            (
-              acc: y:
-                if acc.done || acc.remaining < (daysInYear y)
-                then acc // { done = true; year = y; }
-                else acc // { remaining = acc.remaining - (daysInYear y); }
-            )
-            { remaining = totalDays; done = false; year = 1970; }
-            (lib.range 1970 2200);
-          dayOfYear = yearResult.remaining + 1;
-          week = builtins.div (dayOfYear - 1) 7 + 1;
-        in
-        if week > 52 then 52 else week;
-    in
-    if dateStr == null then fromCurrentTime else fromDateStr dateStr;
+  weekOfYear = import ./week-of-year.nix lib;
 
   buildInvoice =
     { entries
     , configFile ? _defaultConfigFile
     , emblem ? null
+    , emblemSize ? null
+    , accentColor ? null
+    , email ? null
     , org ? ""
     , date ? null
     , invoiceNumber ? null
@@ -111,6 +82,8 @@ let
         configJson = builtConfigJson;
         inherit entries org filename;
         emblemSrc = if resolvedEmblem != null then "${resolvedEmblem}" else "";
+        emblemSizeArg = if emblemSize != null then toString emblemSize else "";
+        emailArg = if email != null then email else "";
         dateArg = if date != null then date else "";
         invoiceNumberArg = if invoiceNumber != null then toString invoiceNumber else "";
 
@@ -150,6 +123,9 @@ let
             --root . \
             --input org="$org" \
             ${lib.optionalString hasEmblem "--input has-emblem=true"} \
+            ${lib.optionalString (emblemSize != null) "--input emblem-height-cm=${toString emblemSize}"} \
+            ${lib.optionalString (accentColor != null) "--input accent-color=${accentColor}"} \
+            ${lib.optionalString (email != null) "--input email-override=${email}"} \
             $extra
         '';
 

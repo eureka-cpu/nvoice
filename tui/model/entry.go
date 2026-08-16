@@ -36,7 +36,7 @@ var Fields = []FieldDef{
 	{"source_currency", "Source Currency", KindString, false, false},
 	{"source_hourly_rate", "Source Rate", KindFloat, true, false},
 	{"target_currency", "Target Currency", KindString, false, false},
-	{"source_cost", "Source Cost", KindFloat, false, true},
+	{"source_cost", "Source Cost", KindFloat, false, false},
 	{"target_hourly_rate", "Target Rate", KindFloat, false, true},
 	{"target_cost", "Target Cost", KindFloat, false, true},
 }

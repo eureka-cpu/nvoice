@@ -7,19 +7,28 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 var monthOrder = map[string]int{
-	"january": 1, "february": 2, "march": 3, "april": 4,
-	"may": 5, "june": 6, "july": 7, "august": 8,
-	"september": 9, "october": 10, "november": 11, "december": 12,
+	"january": 1, "jan": 1,
+	"february": 2, "feb": 2,
+	"march": 3, "mar": 3,
+	"april": 4, "apr": 4,
+	"may": 5,
+	"june": 6, "jun": 6,
+	"july": 7, "jul": 7,
+	"august": 8, "aug": 8,
+	"september": 9, "sep": 9,
+	"october": 10, "oct": 10,
+	"november": 11, "nov": 11,
+	"december": 12, "dec": 12,
 }
 
-var monthFileRe = regexp.MustCompile(`^([a-z]+)-(\d{4})\.json$`)
+// matches files that begin with a month name (full or abbreviated) followed by a 4-digit year
+var monthPrefixRe = regexp.MustCompile(`^(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)-(\d{4})`)
 
 type MonthFile struct {
 	Name       string
@@ -32,6 +41,17 @@ type SaveErrMsg struct{ Err error }
 
 type Entry map[string]interface{}
 
+// fileSortKey returns a string that sorts month-prefixed files chronologically
+// (e.g. "july-2026", "aug-2026-anduril") and everything else alphabetically after.
+func fileSortKey(name string) string {
+	m := monthPrefixRe.FindStringSubmatch(name)
+	if m == nil {
+		return "z:" + name
+	}
+	month := fmt.Sprintf("%02d", monthOrder[m[1]])
+	return m[2] + "-" + month + ":" + name
+}
+
 func ScanDir(dir string) ([]MonthFile, error) {
 	matches, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {
@@ -40,28 +60,20 @@ func ScanDir(dir string) ([]MonthFile, error) {
 
 	var files []MonthFile
 	for _, path := range matches {
-		name := filepath.Base(path)
-		m := monthFileRe.FindStringSubmatch(name)
-		if m == nil {
-			continue
+		entries, err := Load(path)
+		if err != nil {
+			continue // skip files that aren't valid entry arrays (schemas, configs, etc.)
 		}
-		entries, _ := Load(path)
+		name := strings.TrimSuffix(filepath.Base(path), ".json")
 		files = append(files, MonthFile{
-			Name:       strings.TrimSuffix(name, ".json"),
+			Name:       name,
 			Path:       path,
 			EntryCount: len(entries),
 		})
 	}
 
 	sort.Slice(files, func(i, j int) bool {
-		mi := monthFileRe.FindStringSubmatch(filepath.Base(files[i].Path))
-		mj := monthFileRe.FindStringSubmatch(filepath.Base(files[j].Path))
-		yi, _ := strconv.Atoi(mi[2])
-		yj, _ := strconv.Atoi(mj[2])
-		if yi != yj {
-			return yi < yj
-		}
-		return monthOrder[mi[1]] < monthOrder[mj[1]]
+		return fileSortKey(files[i].Name) < fileSortKey(files[j].Name)
 	})
 
 	return files, nil

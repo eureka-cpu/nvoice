@@ -86,7 +86,7 @@ func New(dir string, months []store.MonthFile, nvoiceBin string, userName string
 	ti.CharLimit = 256
 
 	ni := textinput.New()
-	ni.Placeholder = "july-2026"
+	ni.Placeholder = "july-2026 or project-alpha"
 	ni.CharLimit = 32
 
 	vp := viewport.New(0, 0)

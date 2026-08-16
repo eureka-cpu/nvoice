@@ -52,7 +52,12 @@
 #let clr-body = rgb(theme-colors.at("body", default: "#464646"))
 #let clr-label = rgb(theme-colors.at("label", default: "#323232"))
 #let clr-panel-left = rgb(theme-colors.at("panel-left", default: "#f3f3f3"))
-#let clr-panel-right = rgb(theme-colors.at("panel-right", default: "#6d98c2"))
+#let clr-panel-right = rgb(
+  sys.inputs.at("accent-color", default: theme-colors.at(
+    "panel-right",
+    default: "#6d98c2",
+  )),
+)
 #let clr-table-band = rgb(theme-colors.at("table-band", default: "#e8e8e8"))
 #let clr-rule = rgb(theme-colors.at("rule", default: "#d2d2d2"))
 #let clr-dim = rgb(theme-colors.at("dim", default: "#949494"))
@@ -132,14 +137,20 @@
     #linebreak()
     #text(size: 26pt, weight: "bold", fill: white)[INVOICE \##invoice-number]
     #let has-emblem = sys.inputs.at("has-emblem", default: "false") == "true"
+    #let emblem-height = (
+      float(sys.inputs.at("emblem-height-cm", default: "2.5")) * 1cm
+    )
     #if has-emblem {
-      place(bottom + left, image("../emblem.svg", height: 2.5cm))
+      place(bottom + left, image("../emblem.svg", height: emblem-height))
     }
     #place(bottom + right)[
       #text(size: 10pt, fill: white)[
         #provider.name \
         #provider.address \
-        #provider.email
+        #{
+          let o = sys.inputs.at("email-override", default: "")
+          if o == "" { provider.email } else { o }
+        }
       ]
     ]
   ],

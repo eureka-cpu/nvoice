@@ -46,7 +46,15 @@ let
           { description = e.task; }
           // (
             if billing == "weekly"
-            then { week = weekOfYear e.start_date; amount = e.source_cost; }
+            then
+              let
+                startWeek = weekOfYear e.start_date;
+                endWeek   = weekOfYear e.end_date;
+                week      = if startWeek == endWeek
+                            then startWeek
+                            else "${toString startWeek}-${toString endWeek}";
+              in
+              { inherit week; amount = e.source_cost; }
             else { hours = e.rounded_hours; rate = e.source_hourly_rate; }
           )
         )
@@ -75,7 +83,12 @@ let
   combineByTask =
     es:
     let
-      key = e: "${e.task}-${toString (e.source_hourly_rate or 0)}";
+      # Hourly entries are combined by task + rate; non-hourly entries (weekly,
+      # fixed-amount) keep each date range as its own line item.
+      key = e:
+        if (e.source_hourly_rate or 0) != 0
+        then "${e.task}-${toString e.source_hourly_rate}"
+        else "${e.task}-${e.start_date or ""}-${e.end_date or ""}";
       grouped = lib.groupBy key es;
     in
     map
@@ -108,7 +121,10 @@ let
               filename = "${clientSafeStr clientName}_${effectiveNumber}_${datePart}";
               drv = buildInvoice {
                 inherit filename invoiceNumber;
-                emblem = (agencies.${first.agency} or { }).emblem or null;
+                emblem      = (agencies.${first.agency} or { }).emblem      or null;
+                emblemSize  = (agencies.${first.agency} or { }).emblemSize  or null;
+                accentColor = (agencies.${first.agency} or { }).accentColor or null;
+                email       = (agencies.${first.agency} or { }).email       or null;
                 entries = builtins.toJSON invoiceData;
               };
             in
@@ -131,7 +147,10 @@ let
               filename = "${clientSafeStr e.client}_${effectiveNumber}_${datePart}";
               drv = buildInvoice {
                 inherit filename invoiceNumber;
-                emblem = (agencies.${e.agency} or { }).emblem or null;
+                emblem      = (agencies.${e.agency} or { }).emblem      or null;
+                emblemSize  = (agencies.${e.agency} or { }).emblemSize  or null;
+                accentColor = (agencies.${e.agency} or { }).accentColor or null;
+                email       = (agencies.${e.agency} or { }).email       or null;
                 entries = builtins.toJSON invoiceData;
               };
             in

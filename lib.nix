@@ -33,6 +33,9 @@ let
 
   agencyOptions = [
     { path = "emblem"; type = lib.types.path; required = false; description = "Path to SVG shown in the invoice header"; }
+    { path = "emblemSize"; type = lib.types.number; required = false; description = "Emblem height in cm (default 2.5)"; default = 2.5; }
+    { path = "accentColor"; type = hexColor; required = false; description = "Six-digit hex color for the header panel background; overrides theme.colors.panel-right"; }
+    { path = "email"; type = lib.types.str; required = false; description = "Contact email shown in the invoice header; overrides provider.email"; }
     { path = "payment_terms"; type = lib.types.str; required = false; description = "Payment terms string"; default = "Net 30"; }
   ];
 
