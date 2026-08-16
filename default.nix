@@ -33,7 +33,7 @@ let
       clientCfg = clients.${clientName} or { };
       billing = clientCfg.billing or "hourly";
       hasFx = first.exchange_rate != 1.0;
-      number = "INV-${builtins.substring 0 4 first.end_date}-${lib.fixedWidthString 2 "0" (toString (idx + 1))}";
+      number = "INV-${builtins.substring 0 4 first.end_date}-${builtins.substring 4 2 first.end_date}";
     in
     {
       inherit number billing;
