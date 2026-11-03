@@ -85,6 +85,10 @@ Each day becomes its own line item. The `--combine` flag merges all entries for
 the same client into one invoice. Month files are git-ignored by default — add
 them to a private repo or keep them local.
 
+For flat-fee work, omit `rounded_hours` and `source_hourly_rate` and set
+`source_cost` directly. The entry is billed as a fixed amount; when every line
+item on an invoice is fixed, the HOURS and RATE columns are left out.
+
 ## Using as a Library
 
 To generate invoices as part of another Nix project:
@@ -236,7 +240,8 @@ cat > entries.json << 'EOF'
   "billing": "hourly",
   "entries": [
     { "description": "Backend Development", "hours": 24, "rate": 150 },
-    { "description": "Code Review",          "hours":  8, "rate": 150 }
+    { "description": "Code Review",          "hours":  8, "rate": 150 },
+    { "description": "Retainer",             "amount": 1000 }
   ]
 }
 EOF

@@ -25,6 +25,9 @@ let
   entriesStr = if builtins.typeOf entries == "path" then builtins.readFile entries else entries;
   parsed = builtins.fromJSON entriesStr;
 
+  # Entries without an hourly rate are fixed-amount line items billed at source_cost.
+  isHourly = e: (e.source_hourly_rate or 0) != 0;
+
   makeInvoiceData =
     idx: clientName: clientEntries:
     let
@@ -55,7 +58,9 @@ let
                             else "${toString startWeek}-${toString endWeek}";
               in
               { inherit week; amount = e.source_cost; }
-            else { hours = e.rounded_hours; rate = e.source_hourly_rate; }
+            else if isHourly e
+            then { hours = e.rounded_hours; rate = e.source_hourly_rate; }
+            else { amount = e.source_cost; }
           )
         )
         clientEntries;
@@ -86,7 +91,7 @@ let
       # Hourly entries are combined by task + rate; non-hourly entries (weekly,
       # fixed-amount) keep each date range as its own line item.
       key = e:
-        if (e.source_hourly_rate or 0) != 0
+        if isHourly e
         then "${e.task}-${toString e.source_hourly_rate}"
         else "${e.task}-${e.start_date or ""}-${e.end_date or ""}";
       grouped = lib.groupBy key es;
@@ -97,10 +102,11 @@ let
         let
           group = grouped.${k};
           first = builtins.head group;
-          totalHours = lib.foldl' (acc: e: acc + e.rounded_hours) 0 group;
+          totalHours = lib.foldl' (acc: e: acc + (e.rounded_hours or 0)) 0 group;
           totalCost = lib.foldl' (acc: e: acc + (e.source_cost or 0)) 0 group;
         in
-        first // { rounded_hours = totalHours; source_cost = totalCost; }
+        first // { source_cost = totalCost; }
+        // lib.optionalAttrs (isHourly first) { rounded_hours = totalHours; }
       )
       (builtins.attrNames grouped);
 

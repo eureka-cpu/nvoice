@@ -11,13 +11,14 @@
       "start_date",
       "end_date",
       "exchange_rate",
-      "rounded_hours",
       "source_currency",
-      "source_hourly_rate",
       "target_currency",
-      "target_hourly_rate",
       "task",
       "user"
+    ],
+    "anyOf": [
+      { "required": ["rounded_hours", "source_hourly_rate"], "description": "Hourly entry: billed as hours × rate." },
+      { "required": ["source_cost"], "description": "Fixed-amount entry: no hourly rate, billed at source_cost." }
     ],
     "properties": {
       "agency":             { "type": "string", "description": "The agency the user works under. Must match a key in config.nix agencies for emblem/payment_terms lookup." },

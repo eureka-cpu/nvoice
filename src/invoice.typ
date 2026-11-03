@@ -34,7 +34,7 @@
   let running = 0
   let result = ()
   for e in entries {
-    let line-total = if is-weekly { e.amount } else { e.hours * e.rate }
+    let line-total = if "amount" in e { e.amount } else { e.hours * e.rate }
     running = running + line-total
     result = result + ((entry: e, running: running, line-total: line-total),)
   }
@@ -159,21 +159,32 @@
 #v(1.5em)
 
 // Line items
+// Fixed-amount entries carry `amount` instead of `hours`/`rate`. When every
+// entry is fixed, the HOURS and RATE columns are dropped entirely.
+#let is-fixed = not is-weekly and entries.all(e => "amount" in e)
+#let show-qty = not is-fixed
+#let show-rate = not is-weekly and not is-fixed and not has-fx
+#let opt(cond, ..items) = if cond { items.pos() } else { () }
+#let columns = (
+  1fr,
+  ..opt(show-qty, auto),
+  ..opt(show-rate, auto),
+  auto,
+  ..opt(has-fx, auto),
+  auto,
+)
 #let n = rows.len()
 #let col-hdr(body) = text(size: 8pt, weight: "bold", fill: clr-label)[#body]
 #table(
-  columns: if has-fx { (1fr, auto, auto, auto, auto) } else if is-weekly {
-    (1fr, auto, auto, auto)
-  } else {
-    (1fr, auto, auto, auto, auto)
-  },
-  align: if has-fx {
-    (left, center, right, right, right)
-  } else if is-weekly {
-    (left, center, right, right)
-  } else {
-    (left, center, right, right, right)
-  },
+  columns: columns,
+  align: (
+    left,
+    ..opt(show-qty, center),
+    ..opt(show-rate, right),
+    right,
+    ..opt(has-fx, right),
+    right,
+  ),
   stroke: (x, _) => if x > 0 { (left: 0.5pt + clr-rule) } else { none },
   inset: (x: 0.6em, y: 0.55em),
   fill: (_, row) => if row == 0 or row == n + 1 or calc.even(row) {
@@ -184,18 +195,10 @@
 
   table.header(
     col-hdr[DESCRIPTION],
-    col-hdr(if is-weekly { "WEEK" } else { "HOURS" }),
-    ..if not is-weekly and not has-fx {
-      (col-hdr("RATE (" + currency + "/hr)"),)
-    } else {
-      ()
-    },
+    ..opt(show-qty, col-hdr(if is-weekly { "WEEK" } else { "HOURS" })),
+    ..opt(show-rate, col-hdr("RATE (" + currency + "/hr)")),
     col-hdr("PRICE" + (if has-fx { " (" + currency + ")" } else { "" })),
-    ..if has-fx {
-      (col-hdr("RATE (" + currency + " ⟶ " + currency-to + ")"),)
-    } else {
-      ()
-    },
+    ..opt(has-fx, col-hdr("RATE (" + currency + " ⟶ " + currency-to + ")")),
     col-hdr(if has-fx { "SUB TOTAL (" + currency-to + ")" } else {
       "SUB TOTAL"
     }),
@@ -203,20 +206,15 @@
 
   ..rows
     .map(r => {
-      let qty = if is-weekly {
-        [#r.entry.week]
-      } else {
-        [#r.entry.hours]
-      }
-      let rate-cell = if not is-weekly and not has-fx {
-        ([#money(r.entry.rate)],)
-      } else {
-        ()
-      }
+      let e = r.entry
+      let qty = if is-weekly { [#e.week] } else if "hours" in e {
+        [#e.hours]
+      } else { [—] }
+      let rate = if "rate" in e { [#money(e.rate)] } else { [—] }
       let base = (
-        [#r.entry.description],
-        qty,
-        ..rate-cell,
+        [#e.description],
+        ..opt(show-qty, qty),
+        ..opt(show-rate, rate),
         [#money(r.line-total)],
       )
       let fx = if has-fx {
@@ -233,9 +231,7 @@
 
   table.hline(stroke: 0.5pt + clr-rule),
 
-  table.cell(colspan: if has-fx { 4 } else if is-weekly { 3 } else { 4 })[#text(
-    weight: "bold",
-  )[GRAND TOTAL]],
+  table.cell(colspan: columns.len() - 1)[#text(weight: "bold")[GRAND TOTAL]],
   [#text(weight: "bold")[#if has-fx {
     money-to(grand-total * exchange-rate)
   } else { money(grand-total) }]],
